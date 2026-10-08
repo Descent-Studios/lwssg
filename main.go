@@ -15,3 +15,7 @@ func main() {
 
 	fmt.Println(str)
 }
+
+func hello() string {
+	return "hi"
+}
