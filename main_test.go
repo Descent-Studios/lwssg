@@ -107,7 +107,7 @@ func TestMultipleParagraphs(t *testing.T) {
 				Node{
 					nodeType:   NodeText,
 					leaves:     nil,
-					properties: map[string]string{"content": "hello i am a paragraph."},
+					properties: map[string]string{"content": "hello i am a paragraph. Hi!"},
 				},
 			},
 			properties: nil,

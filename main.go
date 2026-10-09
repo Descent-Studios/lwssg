@@ -45,13 +45,17 @@ func hello() string {
 func parseMarkdown(input string) ([]Node, error) {
 	output := make([]Node, 0)
 	for line := range strings.Lines(input) {
+		text := strings.TrimSpace(line)
+		if len(text) == 0 {
+			continue
+		}
 		output = append(output, Node{
 			nodeType: NodeParagraph,
 			leaves: []Node{
 				Node{
 					nodeType:   NodeText,
 					leaves:     nil,
-					properties: map[string]string{"content": line},
+					properties: map[string]string{"content": text},
 				},
 			},
 			properties: nil,
