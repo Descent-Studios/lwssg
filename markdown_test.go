@@ -182,3 +182,64 @@ func TestFormatting(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, result)
 	}
 }
+
+func TestLexer1(t *testing.T) {
+	text := "# Header\nparagraph *with* **formatting** _alt_ __alt2__"
+	result, err := lexMarkdown(text)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	expected := []MarkdownToken{
+		{tokenType: MDTokenHeader1, text: "#"},
+		{tokenType: MDTokenText, text: "Header"},
+		{tokenType: MDTokenNewLine, text: "\n"},
+		{tokenType: MDTokenText, text: "paragraph "},
+		{tokenType: MDTokenItalic, text: "*"},
+		{tokenType: MDTokenText, text: "with"},
+		{tokenType: MDTokenItalic, text: "*"},
+		{tokenType: MDTokenText, text: " "},
+		{tokenType: MDTokenBold, text: "**"},
+		{tokenType: MDTokenText, text: "formatting"},
+		{tokenType: MDTokenBold, text: "**"},
+		{tokenType: MDTokenText, text: " "},
+		{tokenType: MDTokenItalic, text: "_"},
+		{tokenType: MDTokenText, text: "alt"},
+		{tokenType: MDTokenItalic, text: "_"},
+		{tokenType: MDTokenText, text: " "},
+		{tokenType: MDTokenBold, text: "__"},
+		{tokenType: MDTokenText, text: "alt2"},
+		{tokenType: MDTokenBold, text: "__"},
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, Got %v", expected, result)
+	}
+}
+
+func TestLexer2(t *testing.T) {
+	text := "#Not header\n*nest **formatting***\nthis * is just text"
+	result, err := lexMarkdown(text)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	expected := []MarkdownToken{
+		{tokenType: MDTokenText, text: "#Not header"},
+		{tokenType: MDTokenNewLine, text: "\n"},
+		{tokenType: MDTokenItalic, text: "*"},
+		{tokenType: MDTokenText, text: "nest "},
+		{tokenType: MDTokenBold, text: "**"},
+		{tokenType: MDTokenText, text: "formatting"},
+		{tokenType: MDTokenBold, text: "**"},
+		{tokenType: MDTokenItalic, text: "*"},
+		{tokenType: MDTokenNewLine, text: "\n"},
+		{tokenType: MDTokenText, text: "this * is just text"},
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, Got %v", expected, result)
+	}
+}

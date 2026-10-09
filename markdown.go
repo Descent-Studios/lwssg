@@ -3,6 +3,10 @@ package main
 import "strings"
 
 func parseMarkdown(input string) ([]Node, error) {
+	_, err := lexMarkdown(input)
+	if err != nil {
+		return nil, err
+	}
 	output := make([]Node, 0)
 	appendToPrev := false
 	for line := range strings.Lines(input) {
@@ -85,4 +89,39 @@ func parseLine(line string) (Node, error) {
 		leaves:     leaves,
 		properties: nil,
 	}, nil
+}
+
+type MarkdownTokenType int
+
+const (
+	MDTokenText = iota
+	MDTokenNewLine
+	MDTokenItalic
+	MDTokenBold
+	MDTokenPre
+	MDTokenCode
+	MDTokenNumberList
+	MDTokenUndorderedList
+	MDTokenHorizontalRule
+	MDTokenBlockquote
+	MDTokenLinkBOpen
+	MDTokenLinkBClose
+	MDTokenLinkAOpen
+	MDTokenLinkAClose
+	MDTokenImageMark
+	MDTokenHeader1
+	MDTokenHeader2
+	MDTokenHeader3
+	MDTokenHeader4
+	MDTokenHeader5
+	MDTokenHeader6
+)
+
+type MarkdownToken struct {
+	tokenType MarkdownTokenType
+	text      string
+}
+
+func lexMarkdown(text string) ([]MarkdownToken, error) {
+	return nil, nil
 }
