@@ -47,6 +47,7 @@ func parseMarkdown(input string) ([]Node, error) {
 	appendToPrev := false
 	for line := range strings.Lines(input) {
 		text := strings.TrimSpace(line)
+		parseLine(text)
 		if len(text) == 0 {
 			appendToPrev = false
 			continue
@@ -70,7 +71,7 @@ func parseMarkdown(input string) ([]Node, error) {
 					Node{
 						nodeType:   NodeText,
 						leaves:     nil,
-						properties: map[string]string{"content": text},
+						properties: map[string]string{"content": " " + text},
 					},
 				)
 		}
@@ -78,4 +79,8 @@ func parseMarkdown(input string) ([]Node, error) {
 		appendToPrev = true
 	}
 	return output, nil
+}
+
+func parseLine(line string) {
+
 }
