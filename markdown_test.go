@@ -28,7 +28,9 @@ func TestHeader(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
+		t.Logf("Expected %v, got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+
 	}
 }
 
@@ -55,7 +57,9 @@ func TestParagraph(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
+		t.Logf("Expected %v, got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+
 	}
 }
 
@@ -87,7 +91,9 @@ func TestMultilineParagraph(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
+		t.Logf("Expected %v, got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+
 	}
 }
 
@@ -125,7 +131,9 @@ func TestMultipleParagraphs(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
+		t.Logf("Expected %v, got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+
 	}
 }
 
@@ -179,7 +187,8 @@ func TestFormatting(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, got %v", expected, result)
+		t.Logf("Expected %v, got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
 	}
 }
 
@@ -192,7 +201,7 @@ func TestLexer1(t *testing.T) {
 	}
 
 	expected := []MarkdownToken{
-		{tokenType: MDTokenHeader1, text: "#"},
+		{tokenType: MDTokenHeader1, text: "# "},
 		{tokenType: MDTokenText, text: "Header"},
 		{tokenType: MDTokenNewLine, text: "\n"},
 		{tokenType: MDTokenText, text: "paragraph "},
@@ -214,7 +223,9 @@ func TestLexer1(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, Got %v", expected, result)
+		t.Logf("Ran with\n%v\n", text)
+		t.Logf("Expected %v, Got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
 	}
 }
 
@@ -233,13 +244,14 @@ func TestLexer2(t *testing.T) {
 		{tokenType: MDTokenText, text: "nest "},
 		{tokenType: MDTokenBold, text: "**"},
 		{tokenType: MDTokenText, text: "formatting"},
-		{tokenType: MDTokenBold, text: "**"},
-		{tokenType: MDTokenItalic, text: "*"},
+		{tokenType: MDTokenBoldItalic, text: "***"},
 		{tokenType: MDTokenNewLine, text: "\n"},
 		{tokenType: MDTokenText, text: "this * is just text"},
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, Got %v", expected, result)
+		t.Logf("Ran with\n%v\n", text)
+		t.Logf("Expected %v, Got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
 	}
 }
