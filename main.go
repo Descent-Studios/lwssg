@@ -35,7 +35,7 @@ func main() {
 
 	str := string(file)
 
-	fmt.Println(str)
+	fmt.Println(parseMarkdown(str))
 }
 
 func hello() string {
