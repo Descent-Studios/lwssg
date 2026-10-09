@@ -44,22 +44,38 @@ func hello() string {
 
 func parseMarkdown(input string) ([]Node, error) {
 	output := make([]Node, 0)
+	appendToPrev := false
 	for line := range strings.Lines(input) {
 		text := strings.TrimSpace(line)
 		if len(text) == 0 {
+			appendToPrev = false
 			continue
 		}
-		output = append(output, Node{
-			nodeType: NodeParagraph,
-			leaves: []Node{
-				Node{
-					nodeType:   NodeText,
-					leaves:     nil,
-					properties: map[string]string{"content": text},
+		if !appendToPrev {
+			output = append(output, Node{
+				nodeType: NodeParagraph,
+				leaves: []Node{
+					Node{
+						nodeType:   NodeText,
+						leaves:     nil,
+						properties: map[string]string{"content": text},
+					},
 				},
-			},
-			properties: nil,
-		})
+				properties: nil,
+			})
+		} else {
+			lastNode := len(output) - 1
+			output[lastNode].leaves =
+				append(output[lastNode].leaves,
+					Node{
+						nodeType:   NodeText,
+						leaves:     nil,
+						properties: map[string]string{"content": text},
+					},
+				)
+		}
+
+		appendToPrev = true
 	}
 	return output, nil
 }
