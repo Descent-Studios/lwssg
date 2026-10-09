@@ -12,6 +12,14 @@ const (
 	NodeText = iota
 	NodeBold
 	NodeItalic
+	NodePre
+	NodeCode
+	NodeLink
+	NodeImage
+	NodeQuote
+	NodeUL
+	NodeOL
+	NodeHR
 	NodeParagraph
 	NodeH1
 	NodeH2
