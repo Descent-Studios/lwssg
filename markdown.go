@@ -96,6 +96,7 @@ func parseLine(line string) (Node, error) {
 
 type MarkdownTokenType int
 
+// +++ Lexer
 const (
 	MDTokenHeader1 = iota
 	MDTokenHeader2
@@ -248,3 +249,5 @@ func findStartIndex(babo [][][]int, index int) (int, int) {
 
 	return -1, -1
 }
+
+// ---
