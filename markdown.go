@@ -56,33 +56,33 @@ func parseLine(line string) (Node, error) {
 
 	trimmedLine := line[headerLevel:]
 
-	leaves := []Node{}
+	leaves := []Node{Node{
+		nodeType:   NodeText,
+		leaves:     nil,
+		properties: map[string]string{"content": trimmedLine},
+	}}
 
-	prevLevels := []int
+	levels := []byte{}
 	for i := 0; i < len(trimmedLine); i++ {
 		char := trimmedLine[i]
 
 		if char == '*' || char == '_' {
+			if len(levels) != 0 && levels[len(levels)-1] == char {
+				levels = levels[:len(levels)-1]
+				continue
+			}
 			i++
 			char := trimmedLine[i]
-			if char == '*' || char == '_' {
-			} else if char == ' ' {
+			if char == ' ' {
 				continue
-			} else {
-
 			}
+			levels = append(levels, trimmedLine[i-1])
 		}
 	}
 
 	return Node{
-		nodeType: nodeType,
-		leaves: []Node{
-			Node{
-				nodeType:   NodeText,
-				leaves:     nil,
-				properties: map[string]string{"content": trimmedLine},
-			},
-		},
+		nodeType:   nodeType,
+		leaves:     leaves,
 		properties: nil,
 	}, nil
 }
