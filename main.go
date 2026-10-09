@@ -17,6 +17,7 @@ const (
 	NodeH6
 	NodeBold
 	NodeItalic
+	NodeParagraph
 )
 
 type Node struct {

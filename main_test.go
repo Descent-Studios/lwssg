@@ -37,3 +37,30 @@ func TestHeader(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, result)
 	}
 }
+
+func TestParagraph(t *testing.T) {
+	text := "hello i am a paragraph. Hi!"
+	result, err := parseMarkdown(text)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	expected := []Node{
+		Node{
+			nodeType: NodeParagraph,
+			leaves: []Node{
+				Node{
+					nodeType:   NodeText,
+					leaves:     []Node{},
+					properties: map[string]string{"content": "hello i am a paragraph. Hi!"},
+				},
+			},
+			properties: nil,
+		},
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, got %v", expected, result)
+	}
+}
