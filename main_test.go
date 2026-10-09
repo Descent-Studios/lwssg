@@ -52,7 +52,7 @@ func TestParagraph(t *testing.T) {
 			leaves: []Node{
 				Node{
 					nodeType:   NodeText,
-					leaves:     []Node{},
+					leaves:     nil,
 					properties: map[string]string{"content": "hello i am a paragraph. Hi!"},
 				},
 			},

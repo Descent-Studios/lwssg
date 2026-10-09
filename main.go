@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type NodeType int
@@ -41,6 +42,20 @@ func hello() string {
 	return "hi"
 }
 
-func parseMarkdown(string) ([]Node, error) {
-	return make([]Node, 0), nil
+func parseMarkdown(input string) ([]Node, error) {
+	output := make([]Node, 0)
+	for line := range strings.Lines(input) {
+		output = append(output, Node{
+			nodeType: NodeParagraph,
+			leaves: []Node{
+				Node{
+					nodeType:   NodeText,
+					leaves:     nil,
+					properties: map[string]string{"content": line},
+				},
+			},
+			properties: nil,
+		})
+	}
+	return output, nil
 }
