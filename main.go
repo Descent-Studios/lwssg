@@ -9,7 +9,12 @@ type NodeType int
 
 const (
 	NodeText = iota
-	NodeHeader
+	NodeH1
+	NodeH2
+	NodeH3
+	NodeH4
+	NodeH5
+	NodeH6
 	NodeBold
 	NodeItalic
 )
@@ -33,4 +38,8 @@ func main() {
 
 func hello() string {
 	return "hi"
+}
+
+func parseMarkdown(string) ([]Node, error) {
+	return make([]Node, 0), nil
 }
