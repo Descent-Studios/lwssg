@@ -284,7 +284,7 @@ func TestFormatting2(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(result, expected) {
-		t.Logf("Expected %v, got %v", expected, result)
+		t.Logf("Expected \n%v\nGot \n%v\n", expected, result)
 		t.Error("\033[31;1mFAIL\033[0m")
 	}
 }

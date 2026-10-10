@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 
 	"descentdev.cc/lwssg/utils"
@@ -28,6 +29,7 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 		token := lexed[token_i]
 		switch token.tokenType {
 		case MDTokenHeader1:
+			fmt.Println("h1")
 			end_i := utils.Find(lexed, func(val MarkdownToken) bool { return val.tokenType == MDTokenNewLine })
 			if end_i == -1 {
 				end_i = len(lexed) - token_i
@@ -68,11 +70,19 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 				token_i += end_i - 1
 			}
 		case MDTokenBold:
+			fmt.Println("bold")
 			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed bold tag")
 			}
-			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
+			subsection := lexed[token_i+1 : token_i+end_i]
+			if lexed[token_i+end_i].tokenType == MDTokenBoldItalic {
+				subsection = append(subsection, MarkdownToken{
+					tokenType: MDTokenItalic,
+					text:      "*",
+				})
+			}
+			result, err := parseMarkdownSub(subsection, false)
 
 			if err != nil {
 				return nil, err
@@ -87,11 +97,19 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 			)
 			token_i += end_i
 		case MDTokenItalic:
+			fmt.Println("italic")
 			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed italic tag")
 			}
-			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
+			subsection := lexed[token_i+1 : token_i+end_i]
+			if lexed[token_i+end_i].tokenType == MDTokenBoldItalic {
+				subsection = append(subsection, MarkdownToken{
+					tokenType: MDTokenBold,
+					text:      "**",
+				})
+			}
+			result, err := parseMarkdownSub(subsection, false)
 
 			if err != nil {
 				return nil, err
@@ -108,11 +126,27 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 			token_i += end_i
 
 		case MDTokenBoldItalic:
+			fmt.Println("bold italic")
 			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed bold/italic")
 			}
-			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
+			subsection := lexed[token_i+1 : token_i+end_i]
+			nodeType := NodeBold
+			if lexed[token_i+end_i].tokenType != MDTokenBoldItalic {
+				if lexed[token_i+end_i].tokenType == MDTokenBold {
+					n_subsection := []MarkdownToken{MarkdownToken{tokenType: MDTokenItalic, text: "*"}}
+					n_subsection = append(n_subsection, subsection...)
+					subsection = n_subsection
+				}
+				if lexed[token_i+end_i].tokenType == MDTokenItalic {
+					n_subsection := []MarkdownToken{MarkdownToken{tokenType: MDTokenBold, text: "**"}}
+					n_subsection = append(n_subsection, subsection...)
+					subsection = n_subsection
+					nodeType = NodeItalic
+				}
+			}
+			result, err := parseMarkdownSub(subsection, false)
 
 			if err != nil {
 				return nil, err
@@ -120,13 +154,41 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 
 			output = append(output,
 				Node{
-					nodeType:   NodeItalic,
+					nodeType:   NodeType(nodeType),
 					leaves:     result,
 					properties: nil,
 				},
 			)
 
 			token_i += end_i
+		case MDTokenPre:
+			fmt.Println("Pre")
+			end_i := utils.Find(lexed[token_i+1:], func(val MarkdownToken) bool { return val.tokenType == MDTokenPre })
+			if end_i == -1 {
+				return nil, errors.New("Unclosed Pre")
+			}
+
+			subsection := lexed[token_i+1 : token_i+end_i+1]
+
+			text := ""
+			for i := range subsection {
+				text = text + subsection[i].text
+			}
+
+			output = append(output,
+				Node{
+					nodeType: NodePre,
+					leaves: []Node{
+						{
+							nodeType:   NodeText,
+							leaves:     nil,
+							properties: map[string]string{"content": text},
+						},
+					},
+					properties: nil,
+				},
+			)
+			token_i += end_i + 1
 		case MDTokenNewLine:
 			if !toplevel {
 				if len(output) > 0 {
@@ -158,7 +220,7 @@ func findParaTerminator(tokens []MarkdownToken) int {
 
 func findBoldItalTerminator(tokens []MarkdownToken) int {
 	const (
-		Italic = iota
+		Italic = iota + 1
 		Bold
 		BoldItalic
 	)
@@ -190,13 +252,12 @@ func findBoldItalTerminator(tokens []MarkdownToken) int {
 		case MDTokenBoldItalic:
 			if stack_top == BoldItalic {
 				stack = stack[:len(stack)-1]
-			} else if len(stack) > 2 && stack_top+stack[len(stack)-2] == BoldItalic {
+			} else if len(stack) > 1 && stack_top+stack[len(stack)-2] == BoldItalic {
 				stack = stack[:len(stack)-2]
 			} else {
 				stack = append(stack, BoldItalic)
 			}
 		}
-
 		if len(stack) == 0 {
 			return i
 		}
