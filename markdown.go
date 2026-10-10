@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 
 	"descentdev.cc/lwssg/utils"
@@ -29,7 +28,6 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 		token := lexed[token_i]
 		switch token.tokenType {
 		case MDTokenHeader1:
-			fmt.Println("h1")
 			end_i := utils.Find(lexed, func(val MarkdownToken) bool { return val.tokenType == MDTokenNewLine })
 			if end_i == -1 {
 				end_i = len(lexed) - token_i
@@ -70,7 +68,6 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 				token_i += end_i - 1
 			}
 		case MDTokenBold:
-			fmt.Println("bold")
 			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed bold tag")
@@ -97,7 +94,6 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 			)
 			token_i += end_i
 		case MDTokenItalic:
-			fmt.Println("italic")
 			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed italic tag")
@@ -126,7 +122,6 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 			token_i += end_i
 
 		case MDTokenBoldItalic:
-			fmt.Println("bold italic")
 			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed bold/italic")
@@ -162,7 +157,6 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 
 			token_i += end_i
 		case MDTokenPre:
-			fmt.Println("Pre")
 			end_i := utils.Find(lexed[token_i+1:], func(val MarkdownToken) bool { return val.tokenType == MDTokenPre })
 			if end_i == -1 {
 				return nil, errors.New("Unclosed Pre")
