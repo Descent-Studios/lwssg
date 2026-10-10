@@ -352,3 +352,25 @@ func TestLexer2(t *testing.T) {
 		t.Error("\033[31;1mFAIL\033[0m")
 	}
 }
+
+func TestLexer3(t *testing.T) {
+	text := "testing `pre tags`"
+	result, err := lexMarkdown(text)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	expected := []MarkdownToken{
+		{tokenType: MDTokenText, text: "testing "},
+		{tokenType: MDTokenPre, text: "`"},
+		{tokenType: MDTokenText, text: "pre tags"},
+		{tokenType: MDTokenPre, text: "`"},
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Logf("Ran with\n%v\n", text)
+		t.Logf("Expected %v, Got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+	}
+}
