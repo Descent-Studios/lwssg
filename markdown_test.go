@@ -81,9 +81,14 @@ func TestMultilineParagraph(t *testing.T) {
 					properties: map[string]string{"content": "hello i am a paragraph. Hi!"},
 				},
 				Node{
+					nodeType:   NodeSoftBreak,
+					leaves:     nil,
+					properties: nil,
+				},
+				Node{
 					nodeType:   NodeText,
 					leaves:     nil,
-					properties: map[string]string{"content": " This is the same paragraph"},
+					properties: map[string]string{"content": "This is the same paragraph"},
 				},
 			},
 			properties: nil,

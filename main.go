@@ -9,6 +9,7 @@ type NodeType int
 
 const (
 	NodeText = iota
+	NodeSoftBreak
 	NodeBold
 	NodeItalic
 	NodePre

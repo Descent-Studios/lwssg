@@ -1,97 +1,207 @@
 package main
 
 import (
+	"errors"
 	"regexp"
-	"strings"
+
+	"descentdev.cc/lwssg/utils"
 )
 
 func parseMarkdown(input string) ([]Node, error) {
-	// _, err := lexMarkdown(input)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	output := make([]Node, 0)
-	appendToPrev := false
-	for line := range strings.Lines(input) {
-		text := strings.TrimSpace(line)
+	lexed, err := lexMarkdown(input)
+	if err != nil {
+		return nil, err
+	}
 
-		if len(text) == 0 {
-			appendToPrev = false
-			continue
-		}
-		if !appendToPrev {
-			parsed, err := parseLine(text)
+	output, err := parseMarkdownSub(lexed, true)
+
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
+	output := make([]Node, 0)
+
+	for token_i := 0; token_i < len(lexed); token_i++ {
+		token := lexed[token_i]
+		switch token.tokenType {
+		case MDTokenHeader1:
+			end_i := utils.Find(lexed, func(val MarkdownToken) bool { return val.tokenType == MDTokenNewLine })
+			if end_i == -1 {
+				end_i = len(lexed) - token_i
+			}
+			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
+			if err != nil {
+				return nil, err
+			}
+			output = append(output,
+				Node{
+					nodeType:   NodeH1,
+					leaves:     result,
+					properties: nil,
+				},
+			)
+			token_i += end_i - 1
+		case MDTokenText:
+			if !toplevel {
+				output = append(output, Node{
+					nodeType:   NodeText,
+					leaves:     nil,
+					properties: map[string]string{"content": token.text},
+				})
+			} else {
+				end_i := findParaTerminator(lexed[token_i:])
+				result, err := parseMarkdownSub(lexed[token_i:token_i+end_i], false)
+				if err != nil {
+					return nil, err
+				}
+
+				output = append(output,
+					Node{
+						nodeType:   NodeParagraph,
+						leaves:     result,
+						properties: nil,
+					},
+				)
+				token_i += end_i - 1
+			}
+		case MDTokenBold:
+			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFBold)
+			if end_i == -1 {
+				return nil, errors.New("Unclosed bold tag")
+			}
+			result, err := parseMarkdownSub(lexed[token_i+1:token_i+1+end_i], false)
 
 			if err != nil {
 				return nil, err
 			}
 
-			output = append(output, parsed)
-		} else {
-			lastNode := len(output) - 1
-			output[lastNode].leaves =
-				append(output[lastNode].leaves,
-					Node{
-						nodeType:   NodeText,
-						leaves:     nil,
-						properties: map[string]string{"content": " " + text},
-					},
-				)
-		}
+			output = append(output,
+				Node{
+					nodeType:   NodeBold,
+					leaves:     result,
+					properties: nil,
+				},
+			)
+			token_i += end_i - 1
+		case MDTokenItalic:
+			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFItalic)
+			if end_i == -1 {
+				return nil, errors.New("Unclosed italic tag")
+			}
+			result, err := parseMarkdownSub(lexed[token_i+1:token_i+1+end_i], false)
 
-		appendToPrev = true
+			if err != nil {
+				return nil, err
+			}
+
+			output = append(output,
+				Node{
+					nodeType:   NodeItalic,
+					leaves:     result,
+					properties: nil,
+				},
+			)
+			// 		case MDTokenBoldItalic:
+			// 			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFBoth)
+			// 			if end_i == -1 {
+			// 				return nil, errors.New("Unclosed bold italic tag")
+			// 			}
+			// 			result, err := parseMarkdownSub(lexed[token_i+1:token_i+1+end_i], false)
+			//
+			// 			if err != nil {
+			// 				return nil, err
+			// 			}
+			//
+			// 			output = append(output,
+			// 				Node{
+			// 					nodeType:   NodeBold,
+			// 					leaves:     result,
+			// 					properties: nil,
+			// 				},
+			// 			)
+		case MDTokenNewLine:
+			if !toplevel {
+				if len(output) > 0 {
+					output = append(output, Node{
+						nodeType:   NodeSoftBreak,
+						leaves:     nil,
+						properties: nil,
+					})
+				} else {
+					continue
+				}
+			} else {
+				continue
+			}
+		}
 	}
+
 	return output, nil
 }
 
-func parseLine(line string) (Node, error) {
-	// get header amt
-	headerLevel := 0
-	iterator := 0
-	for iterator = 0; line[iterator] == '#'; iterator++ {
-		headerLevel++
-	}
-	if line[iterator] != ' ' {
-		headerLevel = 0
-	}
-
-	var nodeType NodeType = NodeParagraph
-	if headerLevel > 0 {
-		nodeType = NodeType(NodeH1 + headerLevel - 1)
-		headerLevel++
-	}
-
-	trimmedLine := line[headerLevel:]
-
-	leaves := []Node{Node{
-		nodeType:   NodeText,
-		leaves:     nil,
-		properties: map[string]string{"content": trimmedLine},
-	}}
-
-	levels := []byte{}
-	for i := 0; i < len(trimmedLine); i++ {
-		char := trimmedLine[i]
-
-		if char == '*' || char == '_' {
-			if len(levels) != 0 && levels[len(levels)-1] == char {
-				levels = levels[:len(levels)-1]
-				continue
-			}
-			i++
-			char := trimmedLine[i]
-			if char == ' ' {
-				continue
-			}
-			levels = append(levels, trimmedLine[i-1])
+func findParaTerminator(tokens []MarkdownToken) int {
+	for i := 0; i < len(tokens)-1; i++ {
+		if tokens[i].tokenType == MDTokenNewLine && tokens[i+1].tokenType == MDTokenNewLine {
+			return i
 		}
 	}
+	return len(tokens)
+}
 
-	return Node{
-		nodeType:   nodeType,
-		leaves:     leaves,
-		properties: nil,
-	}, nil
+type BoldItalFun int
+
+const (
+	BIFItalic = iota
+	BIFBold
+	BIFBoth
+)
+
+func findBoldItalTerminator(tokens []MarkdownToken, which BoldItalFun) int {
+	const (
+		Italic = iota
+		Bold
+		BoldItalic
+	)
+
+	stack := []int{int(which)}
+	for i := range tokens {
+		token := tokens[i]
+		stack_top := stack[len(stack)-1]
+		switch token.tokenType {
+		case MDTokenBold:
+			if stack_top == Bold {
+				stack = stack[:len(stack)-1]
+			} else if stack_top == BoldItalic {
+				stack[len(stack)-1] = Italic
+			} else {
+				stack = append(stack, Bold)
+			}
+		case MDTokenItalic:
+			if stack_top == Italic {
+				stack = stack[:len(stack)-1]
+			} else if stack_top == BoldItalic {
+				stack[len(stack)-1] = Bold
+			} else {
+				stack = append(stack, Italic)
+			}
+		case MDTokenBoldItalic:
+			if stack_top == BoldItalic {
+				stack = stack[:len(stack)-1]
+			} else if len(stack) > 2 && stack_top+stack[len(stack)-2] == BoldItalic {
+				stack = stack[:len(stack)-2]
+			} else {
+				stack = append(stack, BoldItalic)
+			}
+		}
+
+		if len(stack) == 0 {
+			return i
+		}
+	}
+	return -1
 }
 
 type MarkdownTokenType int
