@@ -68,11 +68,11 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 				token_i += end_i - 1
 			}
 		case MDTokenBold:
-			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFBold)
+			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed bold tag")
 			}
-			result, err := parseMarkdownSub(lexed[token_i+1:token_i+1+end_i], false)
+			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
 
 			if err != nil {
 				return nil, err
@@ -85,13 +85,13 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 					properties: nil,
 				},
 			)
-			token_i += end_i - 1
+			token_i += end_i
 		case MDTokenItalic:
-			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFItalic)
+			end_i := findBoldItalTerminator(lexed[token_i:])
 			if end_i == -1 {
 				return nil, errors.New("Unclosed italic tag")
 			}
-			result, err := parseMarkdownSub(lexed[token_i+1:token_i+1+end_i], false)
+			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
 
 			if err != nil {
 				return nil, err
@@ -104,6 +104,9 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 					properties: nil,
 				},
 			)
+
+			token_i += end_i
+
 			// 		case MDTokenBoldItalic:
 			// 			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFBoth)
 			// 			if end_i == -1 {
@@ -151,25 +154,20 @@ func findParaTerminator(tokens []MarkdownToken) int {
 	return len(tokens)
 }
 
-type BoldItalFun int
-
-const (
-	BIFItalic = iota
-	BIFBold
-	BIFBoth
-)
-
-func findBoldItalTerminator(tokens []MarkdownToken, which BoldItalFun) int {
+func findBoldItalTerminator(tokens []MarkdownToken) int {
 	const (
 		Italic = iota
 		Bold
 		BoldItalic
 	)
 
-	stack := []int{int(which)}
+	stack := []int{}
 	for i := range tokens {
 		token := tokens[i]
-		stack_top := stack[len(stack)-1]
+		stack_top := -1
+		if len(stack) > 0 {
+			stack_top = stack[len(stack)-1]
+		}
 		switch token.tokenType {
 		case MDTokenBold:
 			if stack_top == Bold {

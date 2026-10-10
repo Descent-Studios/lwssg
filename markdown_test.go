@@ -143,7 +143,7 @@ func TestMultipleParagraphs(t *testing.T) {
 }
 
 func TestFormatting(t *testing.T) {
-	text := "this is a paragraph *bold* _italics_"
+	text := "this is a paragraph **bold** *italics*"
 	result, err := parseMarkdown(text)
 
 	if err != nil {
