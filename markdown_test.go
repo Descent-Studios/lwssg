@@ -197,6 +197,98 @@ func TestFormatting(t *testing.T) {
 	}
 }
 
+func TestFormatting2(t *testing.T) {
+	text := "a `pre` tag is codey, *italics **bold italics*** and ***bold italics* bold**"
+	result, err := parseMarkdown(text)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	expected := []Node{
+		Node{
+			nodeType: NodeParagraph,
+			leaves: []Node{
+				Node{
+					nodeType:   NodeText,
+					leaves:     nil,
+					properties: map[string]string{"content": "a "},
+				},
+				Node{
+					nodeType: NodePre,
+					leaves: []Node{
+						Node{
+							nodeType:   NodeText,
+							leaves:     nil,
+							properties: map[string]string{"content": "pre"},
+						},
+					},
+					properties: nil,
+				},
+				Node{
+					nodeType:   NodeText,
+					leaves:     nil,
+					properties: map[string]string{"content": " tag is codey, "},
+				},
+				Node{
+					nodeType: NodeItalic,
+					leaves: []Node{
+						Node{
+							nodeType:   NodeText,
+							leaves:     nil,
+							properties: map[string]string{"content": "italics "},
+						},
+						{
+							nodeType: NodeBold,
+							leaves: []Node{
+								{
+									nodeType:   NodeText,
+									leaves:     nil,
+									properties: map[string]string{"content": "bold italics"},
+								},
+							},
+						},
+					},
+					properties: nil,
+				},
+				Node{
+					nodeType:   NodeText,
+					leaves:     nil,
+					properties: map[string]string{"content": " and "},
+				},
+				Node{
+					nodeType: NodeBold,
+					leaves: []Node{
+						{
+							nodeType: NodeItalic,
+							leaves: []Node{
+								{
+									nodeType:   NodeText,
+									leaves:     nil,
+									properties: map[string]string{"content": "bold italics"},
+								},
+							},
+							properties: nil,
+						},
+						{
+							nodeType:   NodeText,
+							leaves:     nil,
+							properties: map[string]string{"content": " bold"},
+						},
+					},
+					properties: nil,
+				},
+			},
+			properties: nil,
+		},
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Logf("Expected %v, got %v", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+	}
+}
+
 func TestLexer1(t *testing.T) {
 	text := "# Header\nparagraph *with* **formatting** _alt_ __alt2__"
 	result, err := lexMarkdown(text)

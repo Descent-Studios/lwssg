@@ -107,24 +107,26 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 
 			token_i += end_i
 
-			// 		case MDTokenBoldItalic:
-			// 			end_i := findBoldItalTerminator(lexed[token_i+1:], BIFBoth)
-			// 			if end_i == -1 {
-			// 				return nil, errors.New("Unclosed bold italic tag")
-			// 			}
-			// 			result, err := parseMarkdownSub(lexed[token_i+1:token_i+1+end_i], false)
-			//
-			// 			if err != nil {
-			// 				return nil, err
-			// 			}
-			//
-			// 			output = append(output,
-			// 				Node{
-			// 					nodeType:   NodeBold,
-			// 					leaves:     result,
-			// 					properties: nil,
-			// 				},
-			// 			)
+		case MDTokenBoldItalic:
+			end_i := findBoldItalTerminator(lexed[token_i:])
+			if end_i == -1 {
+				return nil, errors.New("Unclosed bold/italic")
+			}
+			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
+
+			if err != nil {
+				return nil, err
+			}
+
+			output = append(output,
+				Node{
+					nodeType:   NodeItalic,
+					leaves:     result,
+					properties: nil,
+				},
+			)
+
+			token_i += end_i
 		case MDTokenNewLine:
 			if !toplevel {
 				if len(output) > 0 {
