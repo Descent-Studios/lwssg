@@ -183,6 +183,15 @@ func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 				},
 			)
 			token_i += end_i + 1
+		case MDTokenEscape:
+			output = append(output,
+				Node{
+					nodeType:   NodeText,
+					leaves:     nil,
+					properties: map[string]string{"content": lexed[token_i+1].text},
+				},
+			)
+			token_i++
 		case MDTokenNewLine:
 			if !toplevel {
 				if len(output) > 0 {
@@ -292,6 +301,7 @@ const (
 
 	MDTokenImageMark
 
+	MDTokenEscape
 	MDTokenNewLine
 	MDTokenText
 )
@@ -332,6 +342,7 @@ var mdTokenMatcher = []*regexp.Regexp{
 
 	nil,
 
+	regexp.MustCompile(`(\\)[-\\_#*\x60]`),
 	regexp.MustCompile(`(\n)`),
 }
 
