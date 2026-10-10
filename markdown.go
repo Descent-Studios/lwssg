@@ -318,7 +318,7 @@ var mdTokenMatcher = []*regexp.Regexp{
 	nil,
 
 	nil,
-	nil,
+	regexp.MustCompile(`(?m)^((- )|(\* ))`),
 
 	nil,
 

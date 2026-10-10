@@ -289,6 +289,49 @@ func TestFormatting2(t *testing.T) {
 	}
 }
 
+func TestFormattingUL(t *testing.T) {
+	text := "- hi\n- second item"
+	result, err := parseMarkdown(text)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+
+	expected := []Node{
+		{
+			nodeType: NodeUL,
+			leaves: []Node{
+				{
+					nodeType: NodeLI,
+					leaves: []Node{
+						{
+							nodeType:   NodeText,
+							leaves:     nil,
+							properties: map[string]string{"content": "hi"},
+						},
+					},
+				},
+				{
+					nodeType: NodeLI,
+					leaves: []Node{
+						{
+							nodeType:   NodeText,
+							leaves:     nil,
+							properties: map[string]string{"content": "second item"},
+						},
+					},
+				},
+			},
+			properties: nil,
+		},
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Logf("Expected \n%v\nGot \n%v\n", expected, result)
+		t.Error("\033[31;1mFAIL\033[0m")
+	}
+}
+
 func TestLexer1(t *testing.T) {
 	text := "# Header\nparagraph *with* **formatting** _alt_ __alt2__"
 	result, err := lexMarkdown(text)
