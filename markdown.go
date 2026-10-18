@@ -1,10 +1,7 @@
 package main
 
 import (
-	"errors"
 	"regexp"
-
-	"descentdev.cc/lwssg/utils"
 )
 
 func parseMarkdown(input string) ([]Node, error) {
@@ -21,191 +18,23 @@ func parseMarkdown(input string) ([]Node, error) {
 	return output, nil
 }
 
+type MDParserState int
+
+const (
+	MDPParagraph = iota
+)
+
 func parseMarkdownSub(lexed []MarkdownToken, toplevel bool) ([]Node, error) {
 	output := make([]Node, 0)
 
-	for token_i := 0; token_i < len(lexed); token_i++ {
-		token := lexed[token_i]
-		switch token.tokenType {
-		case MDTokenHeader1:
-			end_i := utils.Find(lexed, func(val MarkdownToken) bool { return val.tokenType == MDTokenNewLine })
-			if end_i == -1 {
-				end_i = len(lexed) - token_i
-			}
-			result, err := parseMarkdownSub(lexed[token_i+1:token_i+end_i], false)
-			if err != nil {
-				return nil, err
-			}
-			output = append(output,
-				Node{
-					nodeType:   NodeH1,
-					leaves:     result,
-					properties: nil,
-				},
-			)
-			token_i += end_i - 1
-		case MDTokenText:
-			if !toplevel {
-				output = append(output, Node{
-					nodeType:   NodeText,
-					leaves:     nil,
-					properties: map[string]string{"content": token.text},
-				})
-			} else {
-				end_i := findParaTerminator(lexed[token_i:])
-				result, err := parseMarkdownSub(lexed[token_i:token_i+end_i], false)
-				if err != nil {
-					return nil, err
-				}
+	var state MDParserState = MDParserState(MDPParagraph)
 
-				output = append(output,
-					Node{
-						nodeType:   NodeParagraph,
-						leaves:     result,
-						properties: nil,
-					},
-				)
-				token_i += end_i - 1
-			}
-		case MDTokenBold:
-			end_i := findBoldItalTerminator(lexed[token_i:])
-			if end_i == -1 {
-				return nil, errors.New("Unclosed bold tag")
-			}
-			subsection := lexed[token_i+1 : token_i+end_i]
-			if lexed[token_i+end_i].tokenType == MDTokenBoldItalic {
-				subsection = append(subsection, MarkdownToken{
-					tokenType: MDTokenItalic,
-					text:      "*",
-				})
-			}
-			result, err := parseMarkdownSub(subsection, false)
+	for i := range lexed {
+		lexeme := lexed[i]
 
-			if err != nil {
-				return nil, err
-			}
+		switch state {
+		case MDPParagraph:
 
-			output = append(output,
-				Node{
-					nodeType:   NodeBold,
-					leaves:     result,
-					properties: nil,
-				},
-			)
-			token_i += end_i
-		case MDTokenItalic:
-			end_i := findBoldItalTerminator(lexed[token_i:])
-			if end_i == -1 {
-				return nil, errors.New("Unclosed italic tag")
-			}
-			subsection := lexed[token_i+1 : token_i+end_i]
-			if lexed[token_i+end_i].tokenType == MDTokenBoldItalic {
-				subsection = append(subsection, MarkdownToken{
-					tokenType: MDTokenBold,
-					text:      "**",
-				})
-			}
-			result, err := parseMarkdownSub(subsection, false)
-
-			if err != nil {
-				return nil, err
-			}
-
-			output = append(output,
-				Node{
-					nodeType:   NodeItalic,
-					leaves:     result,
-					properties: nil,
-				},
-			)
-
-			token_i += end_i
-
-		case MDTokenBoldItalic:
-			end_i := findBoldItalTerminator(lexed[token_i:])
-			if end_i == -1 {
-				return nil, errors.New("Unclosed bold/italic")
-			}
-			subsection := lexed[token_i+1 : token_i+end_i]
-			nodeType := NodeBold
-			if lexed[token_i+end_i].tokenType != MDTokenBoldItalic {
-				if lexed[token_i+end_i].tokenType == MDTokenBold {
-					n_subsection := []MarkdownToken{MarkdownToken{tokenType: MDTokenItalic, text: "*"}}
-					n_subsection = append(n_subsection, subsection...)
-					subsection = n_subsection
-				}
-				if lexed[token_i+end_i].tokenType == MDTokenItalic {
-					n_subsection := []MarkdownToken{MarkdownToken{tokenType: MDTokenBold, text: "**"}}
-					n_subsection = append(n_subsection, subsection...)
-					subsection = n_subsection
-					nodeType = NodeItalic
-				}
-			}
-			result, err := parseMarkdownSub(subsection, false)
-
-			if err != nil {
-				return nil, err
-			}
-
-			output = append(output,
-				Node{
-					nodeType:   NodeType(nodeType),
-					leaves:     result,
-					properties: nil,
-				},
-			)
-
-			token_i += end_i
-		case MDTokenPre:
-			end_i := utils.Find(lexed[token_i+1:], func(val MarkdownToken) bool { return val.tokenType == MDTokenPre })
-			if end_i == -1 {
-				return nil, errors.New("Unclosed Pre")
-			}
-
-			subsection := lexed[token_i+1 : token_i+end_i+1]
-
-			text := ""
-			for i := range subsection {
-				text = text + subsection[i].text
-			}
-
-			output = append(output,
-				Node{
-					nodeType: NodePre,
-					leaves: []Node{
-						{
-							nodeType:   NodeText,
-							leaves:     nil,
-							properties: map[string]string{"content": text},
-						},
-					},
-					properties: nil,
-				},
-			)
-			token_i += end_i + 1
-		case MDTokenEscape:
-			output = append(output,
-				Node{
-					nodeType:   NodeText,
-					leaves:     nil,
-					properties: map[string]string{"content": lexed[token_i+1].text},
-				},
-			)
-			token_i++
-		case MDTokenNewLine:
-			if !toplevel {
-				if len(output) > 0 {
-					output = append(output, Node{
-						nodeType:   NodeSoftBreak,
-						leaves:     nil,
-						properties: nil,
-					})
-				} else {
-					continue
-				}
-			} else {
-				continue
-			}
 		}
 	}
 
